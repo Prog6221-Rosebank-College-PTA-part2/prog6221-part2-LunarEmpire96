@@ -1,303 +1,180 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace WpfCybersecurityChatbot
+namespace CyberSecurityChatbot
 {
+    //Implements responses to user input such as bot purpose, info on passwords and phishing
+    Dictionary<string, List<string>> Trivia = new()
+        {
+            {"purpose", new() {
+               "My purpose as a chatbot is to provide you information on security on the internet",
+               "I am here to assist you with password creation, management, safety online and security",
+               "My sole purpose is to ensure you leave this chat better informed on how to stay safe from scams and online threats"
+            }
+        },
+            {"password", new() {
+                "Passwords are safety locks that keep your account and sensitive information safe from unwanted users.",
+                "Passworeds shouldn't contain any personal information such as names or places of significance.",
+                "A password should contain a minimum of 8 characters and must consist of letters, numbers, capital letters and lowercase letters."
+            }
+        },
+            {"phishing", new() {
+                "Phishing is a type of cyberattack that uses trickery to scam users out of their personal information and assets.",
+                "Properly analyzing the types of messages and impersonations can help with realizing the phishing attempt.",
+                "Make sure not to interact with suspicious mail or entertain any phone calls that sound shady",
+            }
+        }
+         
+        
+        };
     public partial class MainWindow : Window
     {
-        private string userName = "User";
-        private string lastResponse = "";
+        private string userName;
+        private bool nameInput = false;
 
-        private List<QuizQuestion> quizQuestions;
-        private int currentQuestionIndex = 0;
-        private int score = 0;
 
-        public MainWindow()
+        public object Log { get; }
+        public object UserInputBox { get; private set; }
+        public object Message { get; private set; }
+
+        public MainWindow(object Log)
         {
             InitializeComponent();
-            InitializeChatbot();
+            ShowWelcomeMessage();
+            Log = Log;
         }
 
-        private void InitializeChatbot()
+        private void InitializeComponent()
         {
-            AppendMessage("Chatbot",
-                "Hello! Welcome to the Cybersecurity Awareness Chatbot. I'm here to help you stay safe online.",
-                Colors.Magenta);
-
-            AppendMessage("Chatbot",
-                "Please tell me your name to get started or type 'quiz' to begin the cybersecurity quiz.",
-                Colors.Cyan);
+            throw new NotImplementedException();
         }
 
-        private void SendButton_Click(object sender, RoutedEventArgs e)
+        //method to display the statup message and request the user name
+        private void ShowWelcomeMessage()
         {
-            ProcessUserInput();
+            AddMessageToChat("┌[0-0]┐", "Chatbot", true);
+            AddMessageToChat("Hello! Welcome to the CyberSecurity Awareness Chatbot. I'm here to help.", "Chatbot", true);
+            AddMessageToChat("Please enter your name:", "Chatbot", true);
         }
 
-        private void InputBox_KeyDown(object sender, KeyEventArgs e)
+        //Displays previous and current messages in the chat log
+        private void AddMessageToChat(string message, string sender, bool isBotMessage)
         {
-            if (e.Key == Key.Enter)
+            var chatMessage = new ChatMessage
             {
-                e.Handled = true;
-                ProcessUserInput();
-            }
+                Message = message,
+                Sender = sender,
+                IsBotMessage = isBotMessage
+            };
+
+            Message.Add(chatMessage);
+
+
         }
 
-        private void ProcessUserInput()
+        //Read user input for name and allow the chat to progress
+        private void ProcessUserInput(string input)
         {
-            string input = InputBox.Text.Trim();
-
-            if (string.IsNullOrEmpty(input))
-                return;
-
-            AppendMessage(userName, input, Colors.Cyan);
-
-            if (quizQuestions != null && currentQuestionIndex < quizQuestions.Count)
-            {
-                CheckQuizAnswer(input);
-                InputBox.Clear();
-                ChatScroll.ScrollToEnd();
-                return;
-            }
-
-            if (userName == "User" && !input.ToLower().Contains("exit"))
+            if (!nameInput)
             {
                 userName = input;
-
-                AppendMessage("Chatbot",
-                    $"Hello {userName}. How may I help you today with cybersecurity?",
-                    Colors.Red);
-
-                InputBox.Clear();
-                ChatScroll.ScrollToEnd();
+                nameInput = true;
+                AddMessageToChat($"Hello {userName}. How may I help you?", "Chatbot", true);
                 return;
             }
-
-            if (input.ToLower().Contains("quiz"))
-            {
-                StartQuiz();
-                InputBox.Clear();
-                return;
-            }
-
-            string response = GetResponse(input);
-            lastResponse = response;
-
-            AppendMessage("Chatbot", response, GetColorForResponse(input));
-
-            InputBox.Clear();
-            ChatScroll.ScrollToEnd();
-        }
-
-        private string GetResponse(string input)
-        {
+            //List of set responses depending on the user's questions
             string lowerInput = input.ToLower();
 
             if (lowerInput.Contains("how are you"))
-                return "I'm doing fine. Safe and secure, thank you!";
-
-            else if (lowerInput.Contains("who are you") || lowerInput.Contains("purpose"))
-                return "I am a cybersecurity assistant helping you stay safe online.";
-
-            else if (lowerInput.Contains("phishing"))
-                return "Phishing is a scam where attackers trick you into giving sensitive information.";
-
-            else if (lowerInput.Contains("password"))
-                return "Use strong passwords with letters, numbers, symbols & enable 2FA.";
-
-            else if (lowerInput.Contains("privacy"))
-                return "Protect privacy by limiting personal info and using secure networks.";
-
-            else if (lowerInput.Contains("scam"))
-                return "Always verify messages and never click suspicious links.";
-
-            else if (lowerInput.Contains("exit") || lowerInput.Contains("bye"))
-                return "Goodbye! Stay safe online.";
-
-            return "Ask me about phishing, passwords, scams, privacy, or type 'quiz' to start the test.";
-        }
-
-        private Color GetColorForResponse(string input)
-        {
-            string lower = input.ToLower();
-
-            if (lower.Contains("password"))
-                return Colors.Yellow;
-
-            if (lower.Contains("phishing"))
-                return Colors.LightBlue;
-
-            if (lower.Contains("scam"))
-                return Colors.Orange;
-
-            if (lower.Contains("privacy"))
-                return Colors.LightGreen;
-
-            return Colors.White;
-        }
-
-        private void AppendMessage(string sender, string message, Color color)
-        {
-            string timestamp = DateTime.Now.ToString("HH:mm");
-            ChatHistory.Text += $"[{timestamp}] {sender}: {message}\n\n";
-            ChatScroll.ScrollToEnd();
-        }
-
-        private void StartQuiz()
-        {
-            QuizQuestions();
-
-            currentQuestionIndex = 0;
-            score = 0;
-
-            AppendMessage("Chatbot",
-                "Starting Cybersecurity Quiz! Answer using numbers (1, 2, 3...).",
-                Colors.Cyan);
-
-            ShowNextQuestion();
-        }
-
-        private void QuizQuestions()
-        {
-            quizQuestions = new List<QuizQuestion>
             {
-                new QuizQuestion(
-                    "Phishing is a type of threat that abuses trust to steal information",
-                    new[] { "True", "False" },
-                    0),
-
-                new QuizQuestion(
-                    "What is social engineering?",
-                    new[] { "Better communication", "Manipulating users into giving sensitive info", "Coding skill", "Hardware hacking" },
-                    1),
-
-                new QuizQuestion(
-                    "When is a website secure?",
-                    new[] { "Always", "When it says so", "When it uses HTTPS", "Incognito mode" },
-                    2),
-
-                new QuizQuestion(
-                    "Is 2FA a good security practice?",
-                    new[] { "Yes", "No", "Maybe" },
-                    0),
-
-                new QuizQuestion(
-                    "What should you do with phishing emails?",
-                    new[] { "Ignore and report", "Click links", "Reply", "Share them" },
-                    0),
-                new QuizQuestion(
-                "What is the safest way to create a strong password?",
-                  new[] { "Use your name and birthday", "Use short simple words", "Use a long mix of letters, numbers, and symbols", "Use 'password123'" },
-                    2),
-
-                new QuizQuestion(
-                    "What is phishing primarily used for?",
-                    new[] { "Improving network speed", "Stealing sensitive information through fake messages", "Fixing software bugs", "Encrypting files" },
-                    1),
-                
-                new QuizQuestion(
-                    "What should you do if you receive a suspicious email link?",
-                    new[] { "Click it quickly", "Forward it to friends", "Verify the sender before clicking", "Ignore your antivirus" },
-                    2),
-                
-                new QuizQuestion(
-                    "What does 2FA stand for?",
-                    new[] { "Two File Access", "Two Factor Authentication", "Fast Access System", "Firewall Authentication" },
-                    1),
-                
-                new QuizQuestion(
-                    "Which of the following is a safe practice on public Wi-Fi?",
-                    new[] { "Log into banking accounts freely", "Use a VPN connection", "Disable antivirus", "Share files with strangers" },
-                    1),
-                
-                new QuizQuestion(
-                    "What is social engineering in cybersecurity?",
-                    new[] { "Building social networks", "Manipulating people into revealing sensitive data", "Programming websites", "Fixing hardware issues" },
-                    1),
-                
-                new QuizQuestion(
-                    "Why should you regularly update software?",
-                    new[] { "To change the interface only", "To add unnecessary apps", "To fix security vulnerabilities", "To slow down your device" },
-                    2)
-                             };
-                        }
-
-        private void ShowNextQuestion()
-        {
-            if (currentQuestionIndex >= quizQuestions.Count)
-            {
-                AppendMessage("Chatbot",
-                    $"Quiz finished! Score: {score}/{quizQuestions.Count}",
-                    Colors.LightGreen);
-                return;
+                AddMessageToChat("I'm doing fine. Safe and secure, thank you.", "Chatbot", true);
             }
-
-            var q = quizQuestions[currentQuestionIndex];
-
-            string options = "";
-            for (int i = 0; i < q.Options.Length; i++)
+            else if (lowerInput.Contains("what is your purpose"))
             {
-                options += $"{i + 1}. {q.Options[i]}\n";
+                AddMessageToChat("I am a bot that was created with the purpose of properly educating you on the importance of cybersecurity as well as answering your queries to the best of my abilities.", "Chatbot", true);
             }
-
-            AppendMessage("Quiz", q.Question + "\n" + options, Colors.Yellow);
-        }
-
-        private void CheckQuizAnswer(string input)
-        {
-            if (!int.TryParse(input, out int answer))
+            else if (lowerInput.Contains("what can i ask you about"))
             {
-                AppendMessage("Chatbot", "Please enter a number (1, 2, 3...)", Colors.Red);
-                return;
+                AddMessageToChat("You may ask me about what cybersecurity is, the importance of it in everyday life, as well as common threats to cybersecurity.", "Chatbot", true);
             }
-
-            var q = quizQuestions[currentQuestionIndex];
-
-            if (answer - 1 == q.CorrectIndex)
+            else if (lowerInput.Contains("what is cybersecurity"))
             {
-                score++;
-                AppendMessage("Chatbot", "Correct!", Colors.LightGreen);
+                AddMessageToChat("Cybersecurity refers to various methods, tools and strategies that are set in place to protect a computer from various digital threats like cyber attacks and unauthorized access from known and unknown parties and ensures that users can practice safe browsing. Examples of such threats are phishing, unethical hacking as well as password theft.", "Chatbot", true);
+            }
+            else if (lowerInput.Contains("what is the importance of cybersecurity"))
+            {
+                AddMessageToChat("Cybersecurity assists in maintaining user security and safety by ensuring user data is protected and inaccessible to unwanted, unauthorized parties. This is done by reinforcing the strength of user passwords, frequent security checks, 2 factor verification as well as a quick response to security breaches.", "Chatbot", true);
+            }
+            else if (lowerInput.Contains("what are some threats to cybersecurity"))
+            {
+                AddMessageToChat("Examples of threats to cybersecurity include phishing, which is when attackers deceive users into giving away sensitive information through emails or messages.", "Chatbot", true);
+            }
+            else if (lowerInput.Contains("exit"))
+            {
+                AddMessageToChat("Thanks for stopping by. Goodbye and stay safe.", "Chatbot", true);
+                Application.Current.Shutdown();
             }
             else
             {
-                AppendMessage("Chatbot", "Incorrect.", Colors.Red);
+                AddMessageToChat("[・╭╮・]┘", "Chatbot", true);
+                AddMessageToChat("I didn't understand that question. Please try again.", "Chatbot", true);
             }
-
-            currentQuestionIndex++;
-            ShowNextQuestion();
         }
 
-        private void ClearChat_Click(object sender, RoutedEventArgs e)
+        //Allows the send button to function for the sake of progressing the chat
+        private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            ChatHistory.Text = "";
-            AppendMessage("Chatbot", "Chat cleared.", Colors.Magenta);
+            SendMessage();
         }
 
-        private void SpeakLastResponse_Click(object sender, RoutedEventArgs e)
+        private void UserInputBox_KeyDown(object sender, KeyEventArgs e)
         {
-            MessageBox.Show(lastResponse, "Last Response");
+            if (e.Key == Key.Enter)
+            {
+                SendMessage();
+            }
         }
 
-        private void Exit_Click(object sender, RoutedEventArgs e)
+        private void SendMessage()
         {
-            Application.Current.Shutdown();
+            string input = UserInputBox.ToString();
+            if (!string.IsNullOrEmpty(input))
+            {
+                AddMessageToChat(input, userName ?? "You", false);
+                ProcessUserInput(input);
+                UserInputBox.ToString();
+            }
         }
-    }
-
-    public class QuizQuestion
-    {
-        public string Question { get; set; }
-        public string[] Options { get; set; }
-        public int CorrectIndex { get; set; }
-
-        public QuizQuestion(string question, string[] options, int correctIndex)
+        //Searches for keywords in the reminder function
+        private string NLPTask(string userInput)
         {
-            Question = question;
-            Options = options;
-            CorrectIndex = correctIndex;
+            string task = userInput;
+            string taskReminder = "";
+            if (userInput.Contains("reminder"))
+                taskReminder = userInput;
+        }
+        private void QuizQuestions()
+        {
+            quizQuestions = new()
+            ("Phising is a type of threat that abuses your trust in close parties by impersonating them to acquire data and personal information", new[] { "True", "False" }, 0)
+                ("What is the purpose of social engineering? ", new[] { "To create better social skills", "To manipulate users into giving sensitive info", "To create better conversation", "To exploit users' ears and thoughts" }, 1)
+                ("When can you be certain your site is secured?", new[] { "When it says so", "you can never be certain", "When the link starts with 'https' ", "when the browser is in incognito mode" }, 2)
+                ("Security is a redundant medium as some people can access your data anyways", new[] {"True", "False"  }, 1)
+                ("Phishing may be harmful but can come with some hidden benefits to victims", new[] {"True", "False" }, 1)
+                ("What countermeasures should you take against scams like phishing?", new[] { "Panic and fall for it", "Relax and ignore it", "Keep a cool head and report the attempt", "Do nothing" }, 2)
+                ("Is 2FA a wise security strategy to apply?", new[] { "Yes", "No", "I don't know" }, 0)
+                ("Under what circumstances should you use public wifi?", new[] { "When you need internet for Youtube", "When you want to send a WhatsApp", "Only if you have a VPN active", "when searching for phishing preventative measures" }, 2)
+                ("End-to-End encryption aims to keep your privacy as the highest priority?", new[] { "True", "False"}, 0)
+                }
+        public class ChatMessage
+        {
+            public string Message { get; set; }
+            public string Sender { get; set; }
+            public bool IsBotMessage { get; set; }
         }
     }
 }
